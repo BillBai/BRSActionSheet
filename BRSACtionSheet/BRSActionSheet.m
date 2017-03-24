@@ -14,10 +14,10 @@
 @property (nonatomic, strong) UIView *buttonView;
 @property (nonatomic, strong) UIButton *cancleButton;
 @property (nonatomic, strong) NSArray *actionItems;
-@property (nonatomic, strong) UIView *gapView;
 @property (nonatomic, strong) NSMutableArray *actionButtons;
-@property (nonatomic, assign) BOOL isShowing;
+
 @end
+
 
 @implementation BRSActionSheet
 
@@ -25,7 +25,6 @@
 {
     self = [super init];
     if (self) {
-        _isShowing = NO;
         [self setupActionItems];
         [self setupViews];
     }
@@ -40,18 +39,8 @@
                      ];
 }
 
-- (void)dealloc
-{
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
 - (void)setupViews
 {
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleDidChangeStatusBarOrientation)
-                                                 name:UIApplicationDidChangeStatusBarOrientationNotification
-                                               object:nil];
-    
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     [window addSubview:self];
     self.frame = window.bounds;
@@ -88,12 +77,13 @@
     const CGFloat cancleButtonY = buttonViewHeight - cancleButtonHeight;
     
     UIView *buttonView = [[UIView alloc] initWithFrame:CGRectMake(0.0, height, width, buttonViewHeight)];
+    buttonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
     [self addSubview:buttonView];
     self.buttonView = buttonView;
     
     self.actionButtons = [[NSMutableArray alloc] initWithCapacity:buttonCount];
     for (NSUInteger i = 0; i < buttonCount; ++i) {
-        UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+        UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
         button.frame = CGRectMake(0.0, i * (buttonHeight + sepratorHeigtht), width, buttonHeight+sepratorHeigtht);
         button.backgroundColor = [UIColor whiteColor];
         button.autoresizingMask = UIViewAutoresizingFlexibleWidth;
@@ -124,7 +114,7 @@
             seprator.autoresizingMask = UIViewAutoresizingFlexibleWidth;
             [button addSubview:seprator];
         }
-        [button setBackgroundImage:[self imageWithColor:[UIColor blackColor]]
+        [button setBackgroundImage:[self imageWithColor:[UIColor colorWithWhite:0.8 alpha:0.3]]
                         forState:UIControlStateHighlighted];
         [self.actionButtons addObject:button];
     }
@@ -135,7 +125,7 @@
     gapView.alpha = 0.7;
     [buttonView addSubview:gapView];
     
-    UIButton *cancleButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    UIButton *cancleButton = [UIButton buttonWithType:UIButtonTypeCustom];
     [cancleButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     [cancleButton setTitle:@"取消" forState:UIControlStateNormal];
     cancleButton.titleLabel.font = [UIFont systemFontOfSize:titleFontSize];
@@ -143,7 +133,7 @@
     cancleButton.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     cancleButton.frame = CGRectMake(0.0, cancleButtonY, width, cancleButtonHeight);
     [cancleButton addTarget:self action:@selector(cancleButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [cancleButton setBackgroundImage:[self imageWithColor:[UIColor colorWithWhite:1.0 alpha:0.8]]
+    [cancleButton setBackgroundImage:[self imageWithColor:[UIColor colorWithWhite:0.8 alpha:0.3]]
                             forState:UIControlStateHighlighted];
     [buttonView addSubview:cancleButton];
     self.cancleButton = cancleButton;
@@ -163,36 +153,6 @@
     return image;
 }
 
-- (void)layoutSubviews
-{
-    [super layoutSubviews];
-
-    const CGFloat width = CGRectGetWidth(self.bounds);
-    const CGFloat height = CGRectGetHeight(self.bounds);
-    const CGFloat buttonHeight = 66.0;
-    const CGFloat cancleButtonHeight = 50.0;
-    const CGFloat sepratorHeigtht = 0.5;
-    const CGFloat buttonCancleGapHeight = 10.0;
-    
-    const NSUInteger buttonCount = [self.actionButtons count];
-    const NSUInteger sepratorCount = buttonCount > 0 ? buttonCount - 1 : 0;
-    
-    const CGFloat buttonViewHeight = buttonHeight * buttonCount +
-    sepratorCount * sepratorHeigtht +
-    buttonCancleGapHeight +
-    cancleButtonHeight;
-
-    self.buttonView.frame = CGRectMake(0.0,
-                                       _isShowing ? height - buttonViewHeight : height,
-                                       width, buttonViewHeight);
-}
-
-- (void)handleDidChangeStatusBarOrientation
-{
-    [self setNeedsLayout];
-    [self layoutIfNeeded];
-}
-
 - (void)show
 {
     [self setNeedsLayout];
@@ -206,7 +166,6 @@
         frame.origin.y -= CGRectGetHeight(weakSelf.buttonView.frame);
         weakSelf.buttonView.frame = frame;
     } completion:^(BOOL finished) {
-        weakSelf.isShowing = YES;
     }];
 }
 
@@ -232,7 +191,6 @@
         frame.origin.y = CGRectGetHeight(weakSelf.bounds);
         weakSelf.buttonView.frame = frame;
     } completion:^(BOOL finished) {
-        weakSelf.isShowing = NO;
         [weakSelf removeFromSuperview];
     }];
 }
